@@ -52,7 +52,7 @@ export const loadOrCreateSync = (filename: string) => {
 
 //takes a public key and a hash and returns a signature. <- Is this supposed to say private key?
 //(a signature must be a node buffer)
-const sign = (key: string | string, msg: Buffer | string) => {
+const sign = (key: string, msg: Buffer | string) => {
   if (typeof msg === 'string') msg = new Buffer(msg)
   if (!isBuffer(msg)) throw new Error('msg should be buffer')
 
@@ -70,8 +70,10 @@ const verify = (keys: IKeys, sig: string, msg: Buffer) => {
     throw new Error(
       'signature should be base64 string, did you mean verifyObj(public, signed_obj)',
     )
-  return curves[getCurve(keys)].verify(
-    toBuffer(keys.public || keys),
+  if (!keys.public) throw new Error('no public key provided')
+
+  return curves.ed25519.verify(
+    toBuffer(keys.public),
     toBuffer(sig),
     isBuffer(msg) ? msg : new Buffer(msg),
   )
@@ -79,7 +81,7 @@ const verify = (keys: IKeys, sig: string, msg: Buffer) => {
 
 // OTHER CRYTPO FUNCTIONS
 
-export const signObj = (keys, obj: {}, hmac_key?: string | Buffer) => {
+export const signObj = (keys: string, obj: {}, hmac_key?: string | Buffer) => {
   const _obj = clone(obj) as ISignedObj
   let b = new Buffer(JSON.stringify(_obj, null, 2))
   if (hmac_key) b = hmac(b, toBuffer(hmac_key))
@@ -88,7 +90,7 @@ export const signObj = (keys, obj: {}, hmac_key?: string | Buffer) => {
 }
 
 export const verifyObj = (
-  keys,
+  keys: IKeys,
   obj: ISignedObj,
   hmac_key?: string | Buffer,
 ) => {

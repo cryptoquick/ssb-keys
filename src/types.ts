@@ -1,7 +1,14 @@
 export interface IKeys {
-  id: string
-  curve: string
-  public: Buffer
+  id?: string
+  curve?: string
+  public?: string
+  private?: string
+}
+
+export interface IBufferKeys {
+  id?: string
+  curve?: string
+  public?: Buffer
   private?: Buffer
 }
 

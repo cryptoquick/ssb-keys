@@ -3,7 +3,7 @@ import * as ssbkeys from '../src'
 import * as crypto from 'crypto'
 const path = '/tmp/ssb-keys_' + Date.now()
 
-// console.log = () => {}
+console.log = () => {}
 
 test.cb('create and load async', t => {
   console.log(ssbkeys)
@@ -11,7 +11,8 @@ test.cb('create and load async', t => {
     if (err || !k1 || !k1.id) throw err
     ssbkeys.load(path, (err, k2) => {
       if (err || !k2.id) throw err
-      if (!k1.private || !k2.private) throw err
+      if (!k1.private || !k2.private) throw t.fail()
+      if (!k1.public || !k2.public) throw t.fail()
       console.log(k1, k2)
       t.is(k1.id, k2.id)
       t.is(k1.private.toString('hex'), k2.private.toString('hex'))
@@ -24,7 +25,8 @@ test.cb('create and load async', t => {
 test('create and load sync', t => {
   const k1 = ssbkeys.createSync(path + '1')
   const k2 = ssbkeys.loadSync(path + '1')
-  if (!k1.private || !k2.private) throw Error()
+  if (!k1.private || !k2.private) throw t.fail()
+  if (!k1.public || !k2.public) throw t.fail()
 
   t.is(k1.id, k2.id)
   t.is(k1.private.toString('hex'), k2.private.toString('hex'))
@@ -37,11 +39,16 @@ test('sign and verify a javascript object', t => {
   console.log(obj)
 
   const keys = ssbkeys.generate()
-  const sig = ssbkeys.signObj(keys.private, obj)
-  console.log(sig)
-  t.truthy(sig)
-  t.truthy(ssbkeys.verifyObj(keys, sig))
-  t.truthy(ssbkeys.verifyObj({ public: keys.public }, sig))
+
+  if (keys.private && keys.public) {
+    const sig = ssbkeys.signObj(keys.private, obj)
+    console.log(sig)
+    t.truthy(sig)
+    t.truthy(ssbkeys.verifyObj(keys, sig))
+    t.truthy(ssbkeys.verifyObj({ public: keys.public }, sig))
+  } else {
+    t.fail()
+  }
 })
 
 //allow sign and verify to also take a separate key
@@ -53,6 +60,7 @@ test('sign and verify a hmaced object javascript object in buffer format', t => 
   const hmac_key2 = crypto.randomBytes(32)
 
   const keys = ssbkeys.generate()
+  if (!keys.private) throw t.fail()
   const sig = ssbkeys.signObj(keys.private, obj, hmac_key)
   console.log(sig)
   t.truthy(sig)
@@ -73,6 +81,7 @@ test('sign and verify a hmaced object javascript object in base64 format', t => 
   const hmac_key2 = crypto.randomBytes(32).toString('base64')
 
   const keys = ssbkeys.generate()
+  if (!keys.private) throw t.fail()
   const sig = ssbkeys.signObj(keys.private, obj, hmac_key)
   console.log(sig)
   t.truthy(sig)

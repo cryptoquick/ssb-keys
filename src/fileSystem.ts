@@ -2,13 +2,13 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as mkdirp from 'mkdirp'
 
-import { isEmpty, hasSigil, toFile } from './util'
+import { isEmpty, hasSigil, toFile, deserialize } from './util'
 import { generate } from './sodium'
-import { NodeCallback, IKeys, AnyObj } from './types'
+import { NodeCallback, AnyObj, IBufferKeys } from './types'
 
 //(DE)SERIALIZE KEYS
 
-export const constructKeys = (keys: IKeys) => {
+export const constructKeys = (keys: IBufferKeys): string => {
   if (!keys) throw new Error('*must* pass in keys')
 
   return [
@@ -28,7 +28,7 @@ export const constructKeys = (keys: IKeys) => {
   ].join('\n')
 }
 
-export const reconstructKeys = (keyfile: string): IKeys => {
+export const reconstructKeys = (keyfile: string): IBufferKeys => {
   const privateKey = keyfile
     .replace(/\s*\#[^\n]*/g, '')
     .split('\n')
@@ -37,7 +37,7 @@ export const reconstructKeys = (keyfile: string): IKeys => {
 
   //if the key is in JSON format, we are good.
   try {
-    const keys = JSON.parse(privateKey) as IKeys
+    const keys = deserialize<IBufferKeys>(privateKey)
     if (!hasSigil(keys.id)) keys.id = '@' + keys.public
     return keys
   } catch (err) {
@@ -46,11 +46,11 @@ export const reconstructKeys = (keyfile: string): IKeys => {
   }
 }
 
-export const load = (filename: string, cb: NodeCallback<IKeys>) => {
+export const load = (filename: string, cb: NodeCallback<IBufferKeys>) => {
   filename = toFile(filename, 'secret')
   fs.readFile(filename, 'ascii', (err, privateKeyStr) => {
     if (err) return cb(err, AnyObj)
-    let keys: IKeys
+    let keys: IBufferKeys
     try {
       keys = reconstructKeys(privateKeyStr)
     } catch (err) {
@@ -60,12 +60,12 @@ export const load = (filename: string, cb: NodeCallback<IKeys>) => {
   })
 }
 
-export const loadSync = (filename: string): IKeys => {
+export const loadSync = (filename: string): IBufferKeys => {
   filename = toFile(filename)
   return reconstructKeys(fs.readFileSync(filename, 'ascii'))
 }
 
-export const create = (filename: string, cb: NodeCallback<IKeys>) => {
+export const create = (filename: string, cb: NodeCallback<IBufferKeys>) => {
   filename = toFile(filename)
   const keys = generate()
   const keyfile = constructKeys(keys)
@@ -78,7 +78,7 @@ export const create = (filename: string, cb: NodeCallback<IKeys>) => {
   })
 }
 
-export const createSync = filename => {
+export const createSync = (filename: string) => {
   filename = toFile(filename)
   const keys = generate()
   const keyfile = constructKeys(keys)

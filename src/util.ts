@@ -47,11 +47,11 @@ export const tag = (key: Buffer, tag: string) => {
 
 export const keysToJSON = (keys: IKeys, curve: string) => {
   curve = keys.curve || curve
-  const pub = tag(keys.public, curve)
+  const pub = keys.public ? tag(toBuffer(keys.public), curve) : undefined
   return {
     curve,
     public: pub,
-    private: keys.private ? tag(keys.private, curve) : undefined,
+    private: keys.private ? tag(toBuffer(keys.private), curve) : undefined,
     id: '@' + (curve === 'ed25519' ? pub : hash(pub)),
   }
 }
@@ -67,3 +67,25 @@ export const toBuffer = (buf: Buffer | string): Buffer => {
   const start = exports.hasSigil(buf) ? 1 : 0
   return new Buffer(buf.substring(start, ~i ? i : buf.length), 'base64')
 }
+
+export const binaryEncoder = (_key: string, value: {}) => {
+  if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
+    return cl.to_hex(value)
+  }
+  return value
+}
+
+export const binaryDecoder = (key: string, value: {}) => {
+  if (!value) {
+    return null
+  }
+  if (typeof value === 'string' && (key === 'public' || key === 'private')) {
+    return cl.from_hex(value)
+  }
+  return value
+}
+
+export const serialize = (obj: {}): string =>
+  JSON.stringify(obj, binaryEncoder, 2)
+
+export const deserialize = <T>(str: string): T => JSON.parse(str, binaryDecoder)

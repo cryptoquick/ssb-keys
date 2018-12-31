@@ -1,15 +1,16 @@
 import { generate } from './sodium'
-import { NodeCallback, IKeys } from './types'
+import { NodeCallback, IBufferKeys } from './types'
+import { serialize } from './util'
 
 export const createSync = filename => {
   const keys = generate()
-  localStorage[filename] = JSON.stringify(keys)
+  localStorage[filename] = serialize(keys)
   return keys
 }
 
 export const loadSync = filename => JSON.parse(localStorage[filename])
 
-export const create = (filename: string, cb: NodeCallback<IKeys>) => {
+export const create = (filename: string, cb: NodeCallback<IBufferKeys>) => {
   cb(null, createSync(filename))
 }
 

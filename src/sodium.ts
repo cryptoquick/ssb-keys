@@ -1,13 +1,19 @@
 const sodium = require('chloride')
 
-import { IKeys } from './types'
+import { IBufferKeys } from './types'
 
 export const curves = ['ed25519']
 
-export const generate = (seed?: Buffer): IKeys => {
+interface ISodiumKeys {
+  publicKey: Buffer
+  privateKey: Buffer
+  secretKey: Buffer
+}
+
+export const generate = (seed?: Buffer): IBufferKeys => {
   if (!seed) sodium.randombytes((seed = new Buffer(32)))
 
-  const keys = seed
+  const keys: ISodiumKeys = seed
     ? sodium.crypto_sign_seed_keypair(seed)
     : sodium.crypto_sign_keypair()
 
